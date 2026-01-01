@@ -134,31 +134,35 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Vazirmatn', system-ui, sans-serif;
-    background-image: 
-      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    background-size: 200px 200px;
-    background-blend-mode: overlay;
+    
+    /* MAIN BODY BACKGROUND */
+    background-image: url('/bg.jpg');
+    background-size: cover;       
+    background-position: center;  
+    background-repeat: no-repeat; 
+    background-attachment: fixed; 
+    min-height: 100vh;
   }
 }
 
 @layer components {
-  /* Glass Static - High blur for stationary elements */
+  /* Glass Static - ADJUSTED OPACITY FOR REAL GLASS EFFECT */
   .glass-static {
     @apply relative overflow-hidden;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.85) 0%,
-      rgba(255, 255, 255, 0.75) 50%,
-      rgba(255, 255, 255, 0.8) 100%
+      rgba(255, 255, 255, 0.1) 0%,   /* Reduced from 0.85 to 0.1 */
+      rgba(255, 255, 255, 0.05) 50%, /* Reduced from 0.75 to 0.05 */
+      rgba(255, 255, 255, 0.1) 100%  /* Reduced from 0.8 to 0.1 */
     );
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px) saturate(160%); /* Adjusted blur slightly */
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.3); /* More subtle border */
     box-shadow: 
       0 8px 32px rgba(0, 0, 0, 0.08),
       0 2px 8px rgba(0, 0, 0, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.3);
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.1);
   }
 
   .glass-static::before {
@@ -170,23 +174,23 @@
     height: 50%;
     background: linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.15) 0%, /* Reduced opacity */
       rgba(255, 255, 255, 0) 100%
     );
     pointer-events: none;
   }
 
-  /* Glass Moving - Lower blur for animated elements */
+  /* Glass Moving - ADJUSTED OPACITY */
   .glass-moving {
     @apply relative overflow-hidden;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.92) 0%,
-      rgba(255, 255, 255, 0.88) 100%
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.1) 100%
     );
-    backdrop-filter: blur(6px) saturate(150%);
-    -webkit-backdrop-filter: blur(6px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px) saturate(150%);
+    -webkit-backdrop-filter: blur(8px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 
       0 4px 16px rgba(0, 0, 0, 0.08),
       0 2px 4px rgba(0, 0, 0, 0.04);
@@ -223,11 +227,12 @@
     @apply relative;
   }
 
+  /* Darker overlay for disabled state so it's readable but clearly disabled */
   .glass-disabled::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(200, 200, 200, 0.5);
+    background: rgba(230, 230, 230, 0.3); /* Lower opacity */
     backdrop-filter: blur(2px) grayscale(100%);
     -webkit-backdrop-filter: blur(2px) grayscale(100%);
     border-radius: inherit;
@@ -238,7 +243,7 @@
   .foggy-backdrop {
     backdrop-filter: blur(8px) saturate(120%);
     -webkit-backdrop-filter: blur(8px) saturate(120%);
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
   }
 
   /* Label Silver */
