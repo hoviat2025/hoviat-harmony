@@ -13,7 +13,7 @@ Global Axios instance with:
 ```typescript
 // Base configuration
 const api = axios.create({
-  baseURL: 'https://hoviat-admin-fast-api.onrender.com',
+  baseURL: 'https://test-backend-host.safaee1361.workers.dev',
   headers: { 'Content-Type': 'application/json' }
 });
 ```

@@ -1,3 +1,5 @@
+// --- User Data Interfaces ---
+
 export interface User {
   counter: number;
   user_id: number;
@@ -15,15 +17,15 @@ export interface User {
   is_registered?: boolean;
   chat_not_found?: boolean;
   score?: number;
-  ban_time?: number;
-  join_date?: number;
+  ban_time?: number; // Unix timestamp
+  join_date?: number; // Unix timestamp
   profile_path?: string;
-  telegram_message_id?: number;
-  group_message_id?: number;
-  public_message_id?: number;
-  public_group_message_id?: number;
-  updated_at?: string;
-  channel_updated_at?: string;
+  telegram_message_id?: string;
+  group_message_id?: string;
+  public_message_id?: string;
+  public_group_message_id?: string;
+  updated_at?: string; // ISO String
+  channel_updated_at?: string; // ISO String
 }
 
 export interface UsersResponse {
@@ -60,18 +62,33 @@ export interface UserUpdateRequest {
   ban_time?: number;
 }
 
+export const PROFILE_IMAGE_BASE_URL = 'https://pub-4036d35baed54ee7a9504072ea49740f.r2.dev/';
+
+// --- Filter & UI Config Interfaces ---
+
+export type FilterOperator = 
+  | 'equals' 
+  | 'contains' 
+  | 'gt' 
+  | 'lt' 
+  | 'between' 
+  | 'is_empty' 
+  | 'is_full';
+
 export interface FilterRule {
   field: string;
-  operator: 'equals' | 'contains' | 'gt' | 'lt' | 'is_empty' | 'is_full';
-  value?: string | number | boolean;
+  operator: FilterOperator;
+  value?: any;
+  valueTo?: any; 
 }
 
-export interface UsersFilters {
-  page: number;
-  size: number;
-  order_by: string;
-  search?: string;
-  rules: FilterRule[];
+export type FieldType = 'text' | 'id_number' | 'range_number' | 'boolean' | 'date' | 'datetime' | 'unix' | 'counter';
+
+export interface FieldConfig {
+  name: string;
+  type: FieldType;
+  sortable: boolean;
+  filterable: boolean;
 }
 
 export const FIELD_TRANSLATIONS: Record<string, string> = {
@@ -85,7 +102,6 @@ export const FIELD_TRANSLATIONS: Record<string, string> = {
   phone_number: 'شماره همراه',
   whatsapp_number: 'شماره واتساپ',
   country: 'کشور',
-  password: 'رمز عبور',
   mode: 'حالت در ربات',
   is_ban: 'بن شده است',
   is_registered: 'رجیستر شده است',
@@ -102,42 +118,29 @@ export const FIELD_TRANSLATIONS: Record<string, string> = {
   channel_updated_at: 'تاریخ آپدیت شدن چنل',
 };
 
-export const PROFILE_IMAGE_BASE_URL = 'https://pub-4036d35baed54ee7a9504072ea49740f.r2.dev/';
-
-export type FieldType = 'text' | 'number' | 'boolean' | 'date' | 'datetime';
-
-export interface FieldConfig {
-  name: string;
-  type: FieldType;
-  sortable: boolean;
-  filterable: boolean;
-  nullable: boolean;
-}
-
 export const FIELD_CONFIGS: FieldConfig[] = [
-  { name: 'counter', type: 'number', sortable: true, filterable: true, nullable: false },
-  { name: 'user_id', type: 'number', sortable: true, filterable: true, nullable: true },
-  { name: 'accounting_code', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'username', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'first_name', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'last_name', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'nickname', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'phone_number', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'whatsapp_number', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'country', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'password', type: 'text', sortable: false, filterable: false, nullable: true },
-  { name: 'mode', type: 'text', sortable: true, filterable: true, nullable: true },
-  { name: 'is_ban', type: 'boolean', sortable: true, filterable: true, nullable: false },
-  { name: 'is_registered', type: 'boolean', sortable: true, filterable: true, nullable: false },
-  { name: 'chat_not_found', type: 'boolean', sortable: true, filterable: true, nullable: false },
-  { name: 'score', type: 'number', sortable: true, filterable: true, nullable: true },
-  { name: 'ban_time', type: 'number', sortable: true, filterable: true, nullable: true },
-  { name: 'join_date', type: 'date', sortable: true, filterable: true, nullable: true },
-  { name: 'profile_path', type: 'text', sortable: false, filterable: true, nullable: true },
-  { name: 'telegram_message_id', type: 'number', sortable: false, filterable: true, nullable: true },
-  { name: 'group_message_id', type: 'number', sortable: false, filterable: true, nullable: true },
-  { name: 'public_message_id', type: 'number', sortable: false, filterable: true, nullable: true },
-  { name: 'public_group_message_id', type: 'number', sortable: false, filterable: true, nullable: true },
-  { name: 'updated_at', type: 'datetime', sortable: true, filterable: true, nullable: true },
-  { name: 'channel_updated_at', type: 'datetime', sortable: true, filterable: true, nullable: true },
+  { name: 'counter', type: 'counter', sortable: true, filterable: true },
+  { name: 'user_id', type: 'id_number', sortable: true, filterable: true },
+  { name: 'accounting_code', type: 'id_number', sortable: true, filterable: true },
+  { name: 'username', type: 'text', sortable: true, filterable: true },
+  { name: 'first_name', type: 'text', sortable: true, filterable: true },
+  { name: 'last_name', type: 'text', sortable: true, filterable: true },
+  { name: 'nickname', type: 'text', sortable: true, filterable: true },
+  { name: 'phone_number', type: 'text', sortable: true, filterable: true },
+  { name: 'whatsapp_number', type: 'text', sortable: true, filterable: true },
+  { name: 'country', type: 'text', sortable: true, filterable: true },
+  { name: 'mode', type: 'id_number', sortable: true, filterable: true },
+  { name: 'is_ban', type: 'boolean', sortable: true, filterable: true },
+  { name: 'is_registered', type: 'boolean', sortable: true, filterable: true },
+  { name: 'chat_not_found', type: 'boolean', sortable: true, filterable: true },
+  { name: 'score', type: 'range_number', sortable: true, filterable: true },
+  { name: 'ban_time', type: 'unix', sortable: true, filterable: true },
+  { name: 'join_date', type: 'unix', sortable: true, filterable: true },
+  { name: 'profile_path', type: 'text', sortable: false, filterable: true },
+  { name: 'telegram_message_id', type: 'id_number', sortable: false, filterable: true },
+  { name: 'group_message_id', type: 'id_number', sortable: false, filterable: true },
+  { name: 'public_message_id', type: 'id_number', sortable: false, filterable: true },
+  { name: 'public_group_message_id', type: 'id_number', sortable: false, filterable: true },
+  { name: 'updated_at', type: 'datetime', sortable: true, filterable: true },
+  { name: 'channel_updated_at', type: 'datetime', sortable: true, filterable: true },
 ];

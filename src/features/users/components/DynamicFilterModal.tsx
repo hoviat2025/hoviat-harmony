@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -18,8 +16,8 @@ import {
   FIELD_TRANSLATIONS,
   FIELD_CONFIGS,
   FieldConfig,
+  FilterOperator,
 } from '@/features/users/types';
-import { format } from 'date-fns';
 
 interface DynamicFilterModalProps {
   isOpen: boolean;
@@ -29,42 +27,15 @@ interface DynamicFilterModalProps {
   onApply: (rules: FilterRule[], orderBy: string) => void;
 }
 
-type TextOperator = 'equals' | 'contains' | 'is_empty' | 'is_full';
-type NumberOperator = 'equals' | 'gt' | 'lt' | 'is_empty' | 'is_full';
-type DateOperator = 'equals' | 'gt' | 'lt' | 'is_empty' | 'is_full';
-type BooleanOperator = 'equals' | 'is_empty' | 'is_full';
-
-const TEXT_OPERATORS: { value: TextOperator; label: string }[] = [
-  { value: 'equals', label: 'برابر باشد با' },
-  { value: 'contains', label: 'شامل باشد' },
-  { value: 'is_empty', label: 'خالی باشد' },
-  { value: 'is_full', label: 'پر باشد' },
-];
-
-const NUMBER_OPERATORS: { value: NumberOperator; label: string }[] = [
-  { value: 'equals', label: 'برابر باشد با' },
-  { value: 'gt', label: 'بزرگتر از' },
-  { value: 'lt', label: 'کوچکتر از' },
-  { value: 'is_empty', label: 'خالی باشد' },
-  { value: 'is_full', label: 'پر باشد' },
-];
-
-const DATE_OPERATORS: { value: DateOperator; label: string }[] = [
-  { value: 'equals', label: 'برابر باشد با' },
-  { value: 'gt', label: 'بعد از' },
-  { value: 'lt', label: 'قبل از' },
-  { value: 'is_empty', label: 'خالی باشد' },
-  { value: 'is_full', label: 'پر باشد' },
-];
-
-const BOOLEAN_OPERATORS: { value: BooleanOperator; label: string }[] = [
-  { value: 'equals', label: 'برابر باشد با' },
-  { value: 'is_empty', label: 'خالی باشد' },
-  { value: 'is_full', label: 'پر باشد' },
-];
-
-const SORTABLE_FIELDS = FIELD_CONFIGS.filter(f => f.sortable);
-const FILTERABLE_FIELDS = FIELD_CONFIGS.filter(f => f.filterable);
+const OPERATOR_LABELS: Record<FilterOperator, string> = {
+  equals: 'برابر باشد با',
+  contains: 'شامل باشد',
+  gt: 'بعد از / بزرگتر از',
+  lt: 'قبل از / کوچکتر از',
+  between: 'بـیـن',
+  is_empty: 'خالی باشد',
+  is_full: 'پر باشد',
+};
 
 export const DynamicFilterModal = ({
   isOpen,
@@ -73,53 +44,59 @@ export const DynamicFilterModal = ({
   currentOrderBy,
   onApply,
 }: DynamicFilterModalProps) => {
-  const [rules, setRules] = useState<FilterRule[]>(currentRules);
-  const [orderBy, setOrderBy] = useState(currentOrderBy || '-counter');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-    currentOrderBy.startsWith('-') ? 'desc' : 'asc'
-  );
-  const [sortField, setSortField] = useState(
-    currentOrderBy.replace('-', '') || 'counter'
-  );
+  const [rules, setRules] = useState<FilterRule[]>([]);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState('counter');
 
+  // Sync state when modal opens
   useEffect(() => {
-    setRules(currentRules);
-    setOrderBy(currentOrderBy || '-counter');
-    setSortDirection(currentOrderBy.startsWith('-') ? 'desc' : 'asc');
-    setSortField(currentOrderBy.replace('-', '') || 'counter');
-  }, [currentRules, currentOrderBy, isOpen]);
+    if (isOpen) {
+      setRules([...currentRules]);
+      setSortDirection(currentOrderBy.startsWith('-') ? 'desc' : 'asc');
+      setSortField(currentOrderBy.replace('-', '') || 'counter');
+    }
+  }, [isOpen, currentRules, currentOrderBy]);
 
-  const addRule = (field: string) => {
-    const config = FIELD_CONFIGS.find(f => f.name === field);
+  /**
+   * Adds a new rule.
+   * Initializes values immediately to ensure API stability.
+   */
+  const addRule = (fieldName: string) => {
+    const config = FIELD_CONFIGS.find((f) => f.name === fieldName);
     if (!config) return;
 
-    // Don't add duplicate fields
-    if (rules.find(r => r.field === field)) return;
+    let initialOp: FilterOperator = 'equals';
+    let initialValue: any = '';
 
-    let defaultOperator: FilterRule['operator'] = 'equals';
-    if (config.type === 'text') defaultOperator = 'equals';
-    else if (config.type === 'number') defaultOperator = 'equals';
-    else if (config.type === 'date' || config.type === 'datetime') defaultOperator = 'equals';
-    else if (config.type === 'boolean') defaultOperator = 'equals';
+    // Initialize Dates/Unix to Current Time immediately
+    if (['unix', 'datetime', 'date'].includes(config.type)) {
+      initialOp = 'gt';
+      const now = new Date();
+      // For Unix, store integer seconds. For Date/Datetime, store ISO string.
+      initialValue = config.type === 'unix' 
+        ? Math.floor(now.getTime() / 1000) 
+        : now.toISOString();
+    } 
+    // Initialize Range Numbers (Score) to 0
+    else if (config.type === 'range_number') {
+      initialOp = 'gt';
+      initialValue = 0;
+    }
+    // Initialize Booleans
+    else if (config.type === 'boolean') {
+      initialValue = true;
+    }
 
-    const newRule: FilterRule = {
-      field,
-      operator: defaultOperator,
-      value: config.type === 'boolean' ? true : undefined,
-    };
-
-    setRules([...rules, newRule]);
+    setRules([...rules, { field: fieldName, operator: initialOp, value: initialValue }]);
   };
 
-  const removeRule = (field: string) => {
-    setRules(rules.filter(r => r.field !== field));
+  const updateRule = (index: number, updates: Partial<FilterRule>) => {
+    const newRules = [...rules];
+    newRules[index] = { ...newRules[index], ...updates };
+    setRules(newRules);
   };
 
-  const updateRule = (field: string, updates: Partial<FilterRule>) => {
-    setRules(rules.map(r => 
-      r.field === field ? { ...r, ...updates } : r
-    ));
-  };
+  const removeRule = (index: number) => setRules(rules.filter((_, i) => i !== index));
 
   const handleApply = () => {
     const finalOrderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
@@ -127,266 +104,320 @@ export const DynamicFilterModal = ({
     onClose();
   };
 
-  const handleClear = () => {
-    setRules([]);
-    setSortField('counter');
-    setSortDirection('desc');
-  };
-
   if (!isOpen) return null;
 
-  const usedFields = new Set(rules.map(r => r.field));
-  const availableFields = FILTERABLE_FIELDS.filter(f => !usedFields.has(f.name));
+  // Filter out fields that are already added
+  const availableFields = FIELD_CONFIGS.filter(f => f.filterable && !rules.some(r => r.field === f.name));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Foggy Backdrop */}
-      <div 
-        className="absolute inset-0 foggy-backdrop"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden glass-static rounded-2xl animate-scale-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      
+      {/* Modal Container */}
+      <div className="relative w-full max-w-lg flex flex-col bg-background rounded-3xl max-h-[90vh] shadow-2xl border border-border/50 overflow-hidden">
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border/30">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <Search className="w-5 h-5 text-primary" />
-            فیلتر و جستجو
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="flex items-center justify-between p-5 border-b border-border/40 bg-muted/20">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Search className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">فیلتر و جستجو</h2>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted"><X /></Button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 overflow-y-auto max-h-[60vh] space-y-4">
-          {/* Add Rule Section */}
+        {/* Scrollable Rules Area */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
           <div className="space-y-2">
-            <Label className="text-silver text-sm">افزودن فیلتر</Label>
+            <Label className="text-xs font-medium text-muted-foreground mr-1">افزودن فیلتر جدید</Label>
             <Select onValueChange={addRule}>
-              <SelectTrigger className="w-full bg-background/50">
-                <SelectValue placeholder="انتخاب فیلد..." />
+              <SelectTrigger className="w-full h-12 bg-muted/40 border-border/40 rounded-xl [&>span]:w-full [&>span]:text-right flex-row-reverse">
+                <SelectValue placeholder="یک فیلد انتخاب کنید..." />
               </SelectTrigger>
-              <SelectContent className="bg-popover z-[60]">
-                {availableFields.map((field) => (
-                  <SelectItem key={field.name} value={field.name}>
-                    {FIELD_TRANSLATIONS[field.name] || field.name}
+              <SelectContent className="[&>*]:text-right" align="end">
+                {availableFields.map((f) => (
+                  <SelectItem key={f.name} value={f.name} className="flex-row-reverse justify-between cursor-pointer">
+                    {FIELD_TRANSLATIONS[f.name]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Active Rules */}
-          {rules.length > 0 && (
-            <div className="space-y-3">
-              <Label className="text-silver text-sm">فیلترهای فعال</Label>
-              {rules.map((rule) => (
-                <FilterRuleRow
-                  key={rule.field}
-                  rule={rule}
-                  onUpdate={(updates) => updateRule(rule.field, updates)}
-                  onRemove={() => removeRule(rule.field)}
-                />
-              ))}
-            </div>
-          )}
-
-          {rules.length === 0 && (
-            <div className="text-center py-8 text-silver">
-              <Plus className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>فیلتری اضافه نشده است</p>
-              <p className="text-xs mt-1">از بالا یک فیلد انتخاب کنید</p>
-            </div>
-          )}
+          <div className="space-y-4">
+            {rules.map((rule, idx) => (
+              <FilterRuleRow
+                key={rule.field}
+                rule={rule}
+                onUpdate={(upd) => updateRule(idx, upd)}
+                onRemove={() => removeRule(idx)}
+              />
+            ))}
+            {rules.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground/50 flex flex-col items-center">
+                <Plus className="w-10 h-10 mb-2 opacity-50" />
+                <span className="text-sm">هیچ فیلتری فعال نیست</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Sort Section */}
-        <div className="p-4 border-t border-border/30 bg-muted/30">
-          <Label className="text-silver text-sm mb-3 block">مرتب‌سازی</Label>
+        {/* Footer Configuration */}
+        <div className="p-5 border-t border-border/40 bg-muted/10 space-y-4">
           <div className="flex gap-3">
-            <Select value={sortField} onValueChange={setSortField}>
-              <SelectTrigger className="flex-1 bg-background/50">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-[60]">
-                {SORTABLE_FIELDS.map((field) => (
-                  <SelectItem key={field.name} value={field.name}>
-                    {FIELD_TRANSLATIONS[field.name] || field.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              onClick={() => setSortDirection(d => d === 'asc' ? 'desc' : 'asc')}
-              className="px-4"
-            >
-              {sortDirection === 'asc' ? (
-                <SortAsc className="w-5 h-5" />
-              ) : (
-                <SortDesc className="w-5 h-5" />
-              )}
-              <span className="mr-2">
-                {sortDirection === 'asc' ? 'صعودی' : 'نزولی'}
-              </span>
-            </Button>
+            <div className="flex-1 space-y-1">
+              <Label className="text-[10px] text-muted-foreground mr-1 font-bold">مرتب‌سازی بر اساس</Label>
+              <Select value={sortField} onValueChange={setSortField}>
+                <SelectTrigger className="h-10 bg-background border-border/40 [&>span]:w-full [&>span]:text-right flex-row-reverse">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="[&>*]:text-right" align="end">
+                  {FIELD_CONFIGS.filter(f => f.sortable).map(f => (
+                    <SelectItem key={f.name} value={f.name} className="flex-row-reverse justify-between cursor-pointer">
+                      {FIELD_TRANSLATIONS[f.name]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground mr-1 font-bold invisible">جهت</Label>
+              <Button 
+                variant="outline" 
+                className="h-10 bg-background border-border/40 w-28 justify-between px-3"
+                onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+              >
+                {sortDirection === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                <span className="text-xs">{sortDirection === 'asc' ? 'صعودی' : 'نزولی'}</span>
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-border/30">
-          <Button variant="ghost" onClick={handleClear} className="text-destructive">
-            <Trash2 className="w-4 h-4 ml-2" />
-            پاک کردن همه
-          </Button>
-          <Button
-            onClick={handleApply}
-            className="gold-shine text-primary-foreground px-8"
-          >
-            اعمال فیلتر
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" onClick={() => setRules([])} className="text-destructive hover:bg-destructive/10 flex-1 h-11">
+              <Trash2 className="w-4 h-4 ml-2" /> پاک کردن
+            </Button>
+            <Button onClick={handleApply} className="gold-shine flex-[2] h-11 rounded-xl font-bold">اعمال فیلتر</Button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-// Individual Filter Rule Row Component
-const FilterRuleRow = ({
-  rule,
-  onUpdate,
-  onRemove,
-}: {
-  rule: FilterRule;
-  onUpdate: (updates: Partial<FilterRule>) => void;
-  onRemove: () => void;
+const FilterRuleRow = ({ rule, onUpdate, onRemove }: { 
+  rule: FilterRule; 
+  onUpdate: (u: Partial<FilterRule>) => void; 
+  onRemove: () => void 
 }) => {
-  const config = FIELD_CONFIGS.find(f => f.name === rule.field);
-  if (!config) return null;
+  const config = FIELD_CONFIGS.find((f) => f.name === rule.field)!;
 
-  const isNullCheck = rule.operator === 'is_empty' || rule.operator === 'is_full';
-
-  const getOperators = () => {
-    switch (config.type) {
-      case 'text': return TEXT_OPERATORS;
-      case 'number': return NUMBER_OPERATORS;
-      case 'date':
-      case 'datetime': return DATE_OPERATORS;
-      case 'boolean': return BOOLEAN_OPERATORS;
-      default: return TEXT_OPERATORS;
+  const getAvailableOperators = (): FilterOperator[] => {
+    switch(config.type) {
+      case 'counter': return ['equals'];
+      case 'id_number': return ['equals', 'is_empty', 'is_full'];
+      case 'boolean': return ['equals'];
+      case 'text': return ['equals', 'contains', 'is_empty', 'is_full'];
+      case 'range_number':
+      case 'unix':
+      case 'datetime': return ['gt', 'lt', 'between', 'is_empty', 'is_full'];
+      default: return ['equals'];
     }
   };
 
-  const renderValueInput = () => {
-    if (isNullCheck) return null;
-
-    switch (config.type) {
-      case 'text':
-        return (
-          <Input
-            value={String(rule.value || '')}
-            onChange={(e) => onUpdate({ value: e.target.value })}
-            placeholder="مقدار..."
-            className="flex-1 bg-background/50"
-          />
-        );
-
-      case 'number':
-        return (
-          <Input
-            type="number"
-            value={String(rule.value || '')}
-            onChange={(e) => onUpdate({ value: e.target.value ? Number(e.target.value) : undefined })}
-            placeholder="مقدار..."
-            className="flex-1 bg-background/50"
-          />
-        );
-
-      case 'date':
-      case 'datetime':
-        const dateValue = rule.value ? new Date(Number(rule.value) * 1000) : undefined;
-        return (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="flex-1 justify-start bg-background/50">
-                {dateValue ? format(dateValue, 'yyyy/MM/dd') : 'انتخاب تاریخ...'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-[70]" align="start">
-              <Calendar
-                mode="single"
-                selected={dateValue}
-                onSelect={(date) => {
-                  if (date) {
-                    // Convert to Unix timestamp (seconds)
-                    onUpdate({ value: Math.floor(date.getTime() / 1000) });
-                  }
-                }}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        );
-
-      case 'boolean':
-        return (
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={Boolean(rule.value)}
-              onCheckedChange={(checked) => onUpdate({ value: checked })}
-            />
-            <span className="text-sm text-silver">
-              {rule.value ? 'بله' : 'خیر'}
-            </span>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
+  const ops = getAvailableOperators();
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 animate-fade-in">
-      {/* Field Label */}
-      <div className="min-w-24 text-sm font-medium text-foreground">
-        {FIELD_TRANSLATIONS[rule.field] || rule.field}
+    <div className="flex flex-col gap-3 p-4 rounded-2xl bg-muted/30 border border-border/30 shadow-md animate-in fade-in slide-in-from-top-2">
+      <div className="flex items-center justify-between border-b border-border/20 pb-2 mb-1">
+        <span className="font-bold text-sm text-primary">{FIELD_TRANSLATIONS[rule.field]}</span>
+        <Button variant="ghost" size="icon" onClick={onRemove} className="h-6 w-6 text-muted-foreground hover:text-destructive">
+          <X className="w-3 h-3" />
+        </Button>
       </div>
 
-      {/* Operator Select */}
-      <Select
-        value={rule.operator}
-        onValueChange={(op) => onUpdate({ operator: op as FilterRule['operator'] })}
-      >
-        <SelectTrigger className="w-36 bg-background/50">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="bg-popover z-[60]">
-          {getOperators().map((op) => (
-            <SelectItem key={op.value} value={op.value}>
-              {op.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex flex-col gap-4">
+        <Select 
+          value={rule.operator} 
+          onValueChange={(v) => {
+            const newOperator = v as FilterOperator;
+            const updates: Partial<FilterRule> = { operator: newOperator };
+            
+            // CRITICAL FIX: If switching to 'between', ensure valueTo is initialized.
+            // This prevents "undefined" states when clicking Apply immediately.
+            if (newOperator === 'between' && (rule.valueTo === undefined || rule.valueTo === null || rule.valueTo === '')) {
+              updates.valueTo = rule.value; 
+            }
+            
+            onUpdate(updates);
+          }}
+        >
+          <SelectTrigger className="bg-background border-border/30 shadow-sm h-10 [&>span]:w-full [&>span]:text-right flex-row-reverse">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="[&>*]:text-right" align="end">
+            {ops.map(op => <SelectItem key={op} value={op} className="flex-row-reverse justify-between cursor-pointer">
+              {OPERATOR_LABELS[op]}
+            </SelectItem>)}
+          </SelectContent>
+        </Select>
 
-      {/* Value Input */}
-      {renderValueInput()}
+        {rule.operator !== 'is_empty' && rule.operator !== 'is_full' && (
+          <div className="flex flex-col gap-3">
+            <ValueInput 
+              config={config} 
+              value={rule.value} 
+              onChange={(v) => onUpdate({ value: v })} 
+              label={rule.operator === 'between' ? 'از مقدار / تاریخ' : undefined}
+            />
+            
+            {rule.operator === 'between' && (
+              <ValueInput 
+                config={config} 
+                // We default to rule.value for visual consistency if valueTo is momentarily missing,
+                // but the onValueChange above ensures it's in state.
+                value={rule.valueTo ?? rule.value} 
+                onChange={(v) => onUpdate({ valueTo: v })} 
+                label="تا مقدار / تاریخ"
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
-      {/* Remove Button */}
-      <button
-        onClick={onRemove}
-        className="p-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors flex-shrink-0"
-      >
-        <X className="w-4 h-4" />
-      </button>
+const ValueInput = ({ config, value, onChange, label }: { config: FieldConfig, value: any, onChange: (v: any) => void, label?: string }) => {
+  return (
+    <div className="space-y-2">
+      {label && <Label className="text-[10px] text-muted-foreground mr-1 font-bold">{label}</Label>}
+      
+      {config.type === 'boolean' ? (
+        <div className="flex items-center justify-between bg-background p-3 rounded-xl border border-border/40">
+          <span className="text-xs font-medium">{value ? 'بله / فعال' : 'خیر / غیرفعال'}</span>
+          <Switch checked={!!value} onCheckedChange={onChange} />
+        </div>
+      ) : ['date', 'datetime', 'unix'].includes(config.type) ? (
+        <ManualDateTimeInput 
+          value={value} 
+          onChange={onChange} 
+          showTime={config.type !== 'date'} 
+          isUnix={config.type === 'unix'}
+        />
+      ) : (
+        <Input
+          type={config.type.includes('number') || config.type === 'counter' ? 'number' : 'text'}
+          value={value ?? ''}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === '') onChange('');
+            else if (config.type.includes('number') || config.type === 'counter') onChange(Number(val));
+            else onChange(val);
+          }}
+          className="bg-background border-border/40 h-10 shadow-sm focus-visible:ring-primary text-right" 
+          placeholder="مقدار را وارد کنید..."
+        />
+      )}
+    </div>
+  );
+};
+
+/**
+ * ManualDateTimeInput:
+ * - Uses dir="ltr" to enforce [Year][Month][Day] order visually.
+ * - Labels translated to Persian.
+ */
+const ManualDateTimeInput = ({ value, onChange, showTime, isUnix }: { 
+  value: any, 
+  onChange: (v: any) => void, 
+  showTime: boolean, 
+  isUnix: boolean 
+}) => {
+  const dateObj = value 
+    ? (isUnix ? new Date(Number(value) * 1000) : new Date(value)) 
+    : new Date();
+
+  // Local state for inputs
+  const parts = {
+    year: dateObj.getFullYear(),
+    month: dateObj.getMonth() + 1,
+    day: dateObj.getDate(),
+    hour: dateObj.getHours(),
+    minute: dateObj.getMinutes()
+  };
+
+  const updatePart = (key: keyof typeof parts, val: number) => {
+    const newParts = { ...parts, [key]: val };
+    const d = new Date(newParts.year, newParts.month - 1, newParts.day, newParts.hour, newParts.minute);
+    onChange(isUnix ? Math.floor(d.getTime() / 1000) : d.toISOString());
+  };
+
+  const boxClass = "text-center bg-background border border-border/30 rounded-lg text-sm font-mono h-10 focus:ring-1 ring-primary outline-none";
+
+  return (
+    <div className="flex gap-2 p-3 rounded-xl bg-muted/40 border border-border/30 items-center justify-center overflow-x-auto" dir="ltr">
+      
+      {/* Date Section */}
+      <div className="flex gap-1 items-center">
+        <div className="flex flex-col gap-1 items-center">
+          <Label className="text-[9px] text-muted-foreground">سال</Label>
+          <input 
+            type="number" 
+            className={`${boxClass} w-[4.5rem]`} 
+            value={parts.year} 
+            onChange={e => updatePart('year', +e.target.value)} 
+          />
+        </div>
+        <div className="flex flex-col gap-1 items-center">
+          <Label className="text-[9px] text-muted-foreground">ماه</Label>
+          <input 
+            type="number" min="1" max="12" 
+            className={`${boxClass} w-[3rem]`} 
+            value={parts.month} 
+            onChange={e => updatePart('month', +e.target.value)} 
+          />
+        </div>
+        <div className="flex flex-col gap-1 items-center">
+          <Label className="text-[9px] text-muted-foreground">روز</Label>
+          <input 
+            type="number" min="1" max="31" 
+            className={`${boxClass} w-[3rem]`} 
+            value={parts.day} 
+            onChange={e => updatePart('day', +e.target.value)} 
+          />
+        </div>
+      </div>
+
+      {showTime && (
+           <>
+              <div className="w-[1px] h-6 bg-border/50 mx-1"></div>
+
+              {/* Time Section */}
+              <div className="flex gap-1 items-center">
+                <div className="flex flex-col gap-1 items-center">
+                  <Label className="text-[9px] text-muted-foreground">ساعت</Label>
+                  <input 
+                    type="number" min="0" max="23" 
+                    className={`${boxClass} w-[3rem]`} 
+                    value={parts.hour} 
+                    onChange={e => updatePart('hour', +e.target.value)} 
+                  />
+                </div>
+                <div className="flex flex-col gap-1 items-center">
+                  <Label className="text-[9px] text-muted-foreground">دقیقه</Label>
+                  <input 
+                    type="number" min="0" max="59" 
+                    className={`${boxClass} w-[3rem]`} 
+                    value={parts.minute} 
+                    onChange={e => updatePart('minute', +e.target.value)} 
+                  />
+                </div>
+              </div>
+           </>
+        )}
     </div>
   );
 };

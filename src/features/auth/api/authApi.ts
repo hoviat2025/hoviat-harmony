@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { LoginRequest, LoginResponse } from '../types';
 
-const API_BASE_URL = 'https://hoviat-admin-fast-api.onrender.com/api/admin';
+const API_BASE_URL = 'https://test-backend-host.safaee1361.workers.dev/api/admin';
 
 export const loginApi = async (credentials: LoginRequest): Promise<LoginResponse> => {
   // API requires form-urlencoded format

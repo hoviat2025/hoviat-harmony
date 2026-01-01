@@ -23,7 +23,7 @@ Handles user authentication using JWT tokens with the Hoviat Admin API.
 
 ### Login Endpoint
 ```
-POST https://hoviat-admin-fast-api.onrender.com/api/admin/auth/login
+POST https://test-backend-host.safaee1361.workers.dev/api/admin/auth/login
 Content-Type: application/x-www-form-urlencoded
 
 Body: username=xxx&password=xxx

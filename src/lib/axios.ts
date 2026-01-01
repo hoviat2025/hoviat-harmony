@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { toast } from '@/hooks/use-toast';
 
-const API_BASE_URL = 'https://hoviat-admin-fast-api.onrender.com/api/admin';
+const API_BASE_URL = 'https://test-backend-host.safaee1361.workers.dev/api/admin';
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
