@@ -77,12 +77,12 @@ export const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => 
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Foggy Backdrop */}
       <div 
-        className="absolute inset-0 foggy-backdrop"
+        className="absolute inset-0 "
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden glass-static rounded-2xl animate-scale-in">
+      <div className="relative w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden glass-static rounded-2xl animate-scale-in bg-white/35">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/30">
           <h2 className="text-lg font-bold text-foreground">

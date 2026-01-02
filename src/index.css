@@ -146,23 +146,23 @@
 }
 
 @layer components {
-  /* Glass Static - ADJUSTED OPACITY FOR REAL GLASS EFFECT */
+  /* Glass Static - BALANCED INTENSITY */
   .glass-static {
     @apply relative overflow-hidden;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.1) 0%,   /* Reduced from 0.85 to 0.1 */
-      rgba(255, 255, 255, 0.05) 50%, /* Reduced from 0.75 to 0.05 */
-      rgba(255, 255, 255, 0.1) 100%  /* Reduced from 0.8 to 0.1 */
+      rgba(255, 255, 255, 0.25) 0%,   /* Moderate white */
+      rgba(255, 255, 255, 0.15) 50%,  /* Slight dip */
+      rgba(255, 255, 255, 0.25) 100%  /* Moderate white */
     );
-    backdrop-filter: blur(12px) saturate(160%); /* Adjusted blur slightly */
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.3); /* More subtle border */
+    backdrop-filter: blur(16px) saturate(170%); /* Strong blur but not excessive */
+    -webkit-backdrop-filter: blur(16px) saturate(170%);
+    border: 1px solid rgba(255, 255, 255, 0.45); /* Distinct but delicate border */
     box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.08),
-      0 2px 8px rgba(0, 0, 0, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+      0 10px 36px rgba(0, 0, 0, 0.1),
+      0 4px 10px rgba(0, 0, 0, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .glass-static::before {
@@ -174,26 +174,26 @@
     height: 50%;
     background: linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.15) 0%, /* Reduced opacity */
+      rgba(255, 255, 255, 0.3) 0%, /* Visible sheen */
       rgba(255, 255, 255, 0) 100%
     );
     pointer-events: none;
   }
 
-  /* Glass Moving - ADJUSTED OPACITY */
+  /* Glass Moving - SLIGHTLY BALANCED */
   .glass-moving {
     @apply relative overflow-hidden;
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.2) 0%,
-      rgba(255, 255, 255, 0.1) 100%
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.2) 100%
     );
-    backdrop-filter: blur(8px) saturate(150%);
-    -webkit-backdrop-filter: blur(8px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 
-      0 4px 16px rgba(0, 0, 0, 0.08),
-      0 2px 4px rgba(0, 0, 0, 0.04);
+      0 6px 20px rgba(0, 0, 0, 0.1),
+      0 3px 6px rgba(0, 0, 0, 0.05);
   }
 
   /* Gold Shiny Effect */
@@ -232,9 +232,9 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(230, 230, 230, 0.3); /* Lower opacity */
-    backdrop-filter: blur(2px) grayscale(100%);
-    -webkit-backdrop-filter: blur(2px) grayscale(100%);
+    background: rgba(230, 230, 230, 0.35);
+    backdrop-filter: blur(4px) grayscale(100%);
+    -webkit-backdrop-filter: blur(4px) grayscale(100%);
     border-radius: inherit;
     z-index: 10;
   }
@@ -243,7 +243,7 @@
   .foggy-backdrop {
     backdrop-filter: blur(8px) saturate(120%);
     -webkit-backdrop-filter: blur(8px) saturate(120%);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
   }
 
   /* Label Silver */
