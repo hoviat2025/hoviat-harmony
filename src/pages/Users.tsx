@@ -33,10 +33,10 @@ const UsersPage = () => {
   };
 
   const handleApplyFilters = (newRules: typeof rules, newOrderBy: string) => {
+    // FIX: Just call updateFilters. 
+    // Do NOT manually set searchParamsUrl afterwards using the stale 'searchParams' variable,
+    // as that overwrites the changes made by updateFilters.
     updateFilters({ rules: newRules, order_by: newOrderBy });
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (viewMode) newSearchParams.set('view', viewMode);
-    setSearchParamsUrl(newSearchParams);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -45,6 +45,7 @@ const UsersPage = () => {
 
   const toggleViewMode = (mode: ViewMode) => {
     setViewMode(mode);
+    // Here it is safe to manually set URL because we are initiating the change
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('view', mode);
     setSearchParamsUrl(newSearchParams);
@@ -119,11 +120,6 @@ const UsersPage = () => {
       {data && data.data.length > 0 && (
         <>
           {viewMode === 'card' ? (
-            /* 
-               Grid Layout: 
-               - xl:grid-cols-5: Added 5 columns for large screens
-               - Wrapper div: max-w-[300px] + mx-auto ensures cards stay vertical and centered
-            */
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {data.data.map((user) => (
                 <div key={user.user_id} className="w-full max-w-[300px] mx-auto h-full">
@@ -135,7 +131,6 @@ const UsersPage = () => {
               ))}
             </div>
           ) : (
-            /* List Layout */
             <div className="space-y-3">
               {data.data.map((user) => (
                 <UserRow
