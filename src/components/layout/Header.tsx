@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { LogOut, ChevronRight, Home } from 'lucide-react';
 import { useLogout, useCurrentUser } from '@/features/auth/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -72,7 +72,7 @@ export const Header = () => {
                 variant="ghost" 
                 className="flex items-center gap-2 text-foreground hover:bg-accent/50 rounded-full px-4"
               >
-                <LayoutDashboard className="w-5 h-5" />
+                <Home className="w-5 h-5" />
                 <span className="hidden sm:inline">داشبورد</span>
               </Button>
             </Link>
