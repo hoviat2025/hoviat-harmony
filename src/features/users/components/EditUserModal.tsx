@@ -16,8 +16,9 @@ interface EditUserModalProps {
   user: User;
 }
 
-// Editable fields
+// Editable fields based on API specs
 const EDITABLE_FIELDS = [
+  'accounting_code',
   'username',
   'first_name',
   'last_name',
@@ -28,9 +29,7 @@ const EDITABLE_FIELDS = [
   'password',
   'is_ban',
   'is_registered',
-  'chat_not_found',
   'score',
-  'ban_time',
 ];
 
 export const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => {
@@ -39,13 +38,14 @@ export const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => 
 
   useEffect(() => {
     if (isOpen && user) {
-      // Initialize form with current user data
+      // Initialize form with current user data, keeping user_id safe
       const initialData: Partial<UserUpdateRequest> = {
         user_id: user.user_id,
       };
       
       EDITABLE_FIELDS.forEach((field) => {
         const value = user[field as keyof User];
+        // Ensure we copy values even if they are 0 or false, but not if undefined/null
         if (value !== undefined && value !== null) {
           (initialData as Record<string, unknown>)[field] = value;
         }
@@ -101,6 +101,7 @@ export const EditUserModal = ({ isOpen, onClose, user }: EditUserModalProps) => 
         <form onSubmit={handleSubmit}>
           <div className="p-4 overflow-y-auto max-h-[60vh] space-y-4">
             {EDITABLE_FIELDS.map((field) => {
+              // Only render fields that have a configuration
               const config = FIELD_CONFIGS.find(f => f.name === field);
               if (!config) return null;
 
@@ -161,24 +162,18 @@ const EditFieldRow = ({
 }) => {
   const label = FIELD_TRANSLATIONS[field] || field;
 
-  const renderInput = () => {
-    switch (type) {
-      case 'text':
-        return (
-          <Input
-            value={String(value || '')}
-            onChange={(e) => onChange(e.target.value || undefined)}
-            placeholder={label}
-            className="bg-background/50"
-          />
-        );
+  // Normalize type to ensure we handle 'integer', 'string' or casing differences
+  const normalizedType = (type || 'text').toLowerCase();
 
+  const renderInput = () => {
+    switch (normalizedType) {
       case 'number':
+      case 'integer':
         return (
           <Input
             type="number"
             value={value !== undefined && value !== null ? String(value) : ''}
-            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
+            onChange={(e) => onChange(e.target.value !== '' ? Number(e.target.value) : undefined)}
             placeholder={label}
             className="bg-background/50"
           />
@@ -225,8 +220,18 @@ const EditFieldRow = ({
           </div>
         );
 
+      // Default fallback for 'text', 'string', or any unknown type
+      case 'text':
+      case 'string':
       default:
-        return null;
+        return (
+          <Input
+            value={value !== undefined && value !== null ? String(value) : ''}
+            onChange={(e) => onChange(e.target.value || undefined)}
+            placeholder={label}
+            className="bg-background/50"
+          />
+        );
     }
   };
 
