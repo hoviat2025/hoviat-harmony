@@ -37,11 +37,23 @@ const UserDetailPage = () => {
       return value ? 'بله' : 'خیر';
     }
     
-    if (config?.type === 'date' || config?.type === 'datetime') {
-      // Unix timestamp
-      if (typeof value === 'number' && value > 1000000000) {
+    // Check for date, datetime, OR unix types
+    if (config?.type === 'date' || config?.type === 'datetime' || config?.type === 'unix') {
+      // If value is 0 or "0", treat it as empty/none (e.g. not banned)
+      if (value === 0 || value === '0') {
+        return '-';
+      }
+
+      // Unix timestamp (number)
+      if (typeof value === 'number') {
         return format(new Date(value * 1000), 'yyyy/MM/dd HH:mm');
       }
+
+      // Unix timestamp string (e.g. "1763468864")
+      if (typeof value === 'string' && /^\d+$/.test(value)) {
+        return format(new Date(Number(value) * 1000), 'yyyy/MM/dd HH:mm');
+      }
+
       // ISO string
       if (typeof value === 'string') {
         try {
@@ -120,10 +132,10 @@ const UserDetailPage = () => {
           <div className="text-center sm:text-right flex-1">
             <h1 className="text-2xl font-bold text-value mb-2">{displayName}</h1>
             <p className="text-silver">
-              {FIELD_TRANSLATIONS.user_id}: {user.user_id}
+              {user.user_id}
             </p>
             {user.username && (
-              <p className="text-silver">@{user.username}</p>
+              <p className="text-silver">{user.username}@</p>
             )}
             {user.country && (
               <p className="text-silver mt-1">{user.country}</p>
