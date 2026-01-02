@@ -4,7 +4,7 @@ import { Users, BarChart3, Lock, Zap, Brain, LucideIcon } from 'lucide-react';
 // --- CONFIGURATION ---
 const GRID_CONFIG = {
   // Limits max width on desktop so cards don't stretch indefinitely
-  maxWidth: "max-w-3xl", 
+  maxWidth: "max-w-xl", 
   // Forces the vertical portrait shape
   cardAspectRatio: "aspect-[3/4]" 
 };
