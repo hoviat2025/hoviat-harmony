@@ -19,7 +19,8 @@ export const UserCard = ({ user, onClick }: UserCardProps) => {
       onClick={onClick}
       className={cn(
         "glass-static rounded-2xl p-4 cursor-pointer transition-all duration-200 hover:shadow-glass-hover group relative flex flex-col h-full",
-        user.is_ban ? "opacity-75" : ""
+        // Replaced opacity-75 with background tint/border to preserve glass effect
+        user.is_ban ? "border-destructive/50 bg-destructive/5" : ""
       )}
     >
       {/* Ban Badge */}

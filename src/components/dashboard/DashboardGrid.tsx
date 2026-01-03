@@ -41,7 +41,7 @@ const dashboardCards: DashboardCard[] = [
     description: 'مشاهده آمار و ارقام مختلف مانند تعداد کاربران و ...',
     icon: BarChart3,
     path: '/stats',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'ai',

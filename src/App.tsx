@@ -2,13 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import LoginPage from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import UsersPage from "@/pages/Users";
 import UserDetailPage from "@/pages/UserDetail";
+import StatsPage from "@/pages/StatsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/users/:id" element={<UserDetailPage />} />
+            <Route path="/stats" element={<StatsPage />} />
           </Route>
 
           {/* Catch-all */}

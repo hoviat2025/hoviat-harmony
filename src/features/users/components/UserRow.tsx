@@ -1,4 +1,4 @@
-import { User, PROFILE_IMAGE_BASE_URL, FIELD_TRANSLATIONS } from '@/features/users/types';
+import { User, PROFILE_IMAGE_BASE_URL } from '@/features/users/types';
 import { AlertTriangle, Calendar, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,8 +56,9 @@ export const UserRow = ({ user, onClick }: UserRowProps) => {
     <div
       onClick={onClick}
       className={cn(
-        "glass-static rounded-xl p-3 cursor-pointer transition-all duration-200 hover:shadow-glass-hover group",
-        user.is_ban ? "opacity-75" : ""
+        "glass-static rounded-xl p-3 cursor-pointer transition-all duration-200 hover:shadow-glass-hover group relative z-0",
+        // Replaced opacity-75 with background tint and border color to preserve backdrop-filter (glass effect)
+        user.is_ban ? "border-destructive/50 bg-destructive/5" : ""
       )}
     >
       {/* Reduced gap from 6 to 4 for better spacing */}
