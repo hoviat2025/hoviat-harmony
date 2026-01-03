@@ -60,7 +60,8 @@ export const UserRow = ({ user, onClick }: UserRowProps) => {
         user.is_ban ? "opacity-75" : ""
       )}
     >
-      <div className="flex items-center gap-6 flex-nowrap overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
+      {/* Reduced gap from 6 to 4 for better spacing */}
+      <div className="flex items-center gap-4 flex-nowrap overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
         
         {/* Profile Image */}
         <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 border-border/30 group-hover:border-primary/30 transition-colors">
@@ -96,10 +97,10 @@ export const UserRow = ({ user, onClick }: UserRowProps) => {
 
           return (
             /* 
-               Added 'items-center' and 'text-center' here.
-               This forces the flex column content to be centered horizontally within the 100px box.
+               Removed 'min-w-[100px]' to allow fields to shrink/grow based on content.
+               Added 'px-1' for a tiny bit of breathing room inside the implicit box.
             */
-            <div key={field} className="flex-shrink-0 min-w-[100px] flex flex-col justify-center items-center text-center">
+            <div key={field} className="flex-shrink-0 flex flex-col justify-center items-center text-center px-1">
               <div className="text-[10px] text-silver mb-0.5 whitespace-nowrap">{label}</div>
               <div className="text-sm font-medium text-value whitespace-nowrap w-full">
                 {formatValue(field, value)}
