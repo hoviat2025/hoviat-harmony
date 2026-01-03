@@ -27,6 +27,14 @@ const dashboardCards: DashboardCard[] = [
     path: '/users',
     enabled: true,
   },
+    {
+    id: 'stats',
+    title: 'آمار و ارقام',
+    description: 'مشاهده آمار و ارقام مختلف مانند تعداد کاربران و ...',
+    icon: BarChart3,
+    path: '/stats',
+    enabled: true,
+  },
   {
     id: 'shortcuts',
     title: 'کار های پرتکرار',
@@ -34,14 +42,6 @@ const dashboardCards: DashboardCard[] = [
     icon: Zap,
     path: '/shortcuts',
     enabled: false,
-  },
-  {
-    id: 'stats',
-    title: 'آمار و ارقام',
-    description: 'مشاهده آمار و ارقام مختلف مانند تعداد کاربران و ...',
-    icon: BarChart3,
-    path: '/stats',
-    enabled: true,
   },
   {
     id: 'ai',
