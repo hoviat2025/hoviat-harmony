@@ -1,0 +1,7 @@
+# Netlify Configuration File
+# This file configures Netlify to handle Single Page Application (SPA) routing properly.
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
