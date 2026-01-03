@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, User, Loader2 } from 'lucide-react';
 import { useLogin } from '../hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -43,9 +42,10 @@ export const LoginForm = () => {
                 <Input
                   id="username"
                   type="text"
+                  dir="ltr"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="pr-10 h-12 bg-background/50 border-border/50 focus:border-primary rounded-xl"
+                  className="pr-10 h-12 bg-background/50 border-border/50 focus:border-primary rounded-xl text-left"
                   placeholder="نام کاربری"
                   disabled={isPending}
                   required
@@ -62,9 +62,10 @@ export const LoginForm = () => {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
+                  dir="ltr"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10 pl-10 h-12 bg-background/50 border-border/50 focus:border-primary rounded-xl"
+                  className="pr-10 pl-10 h-12 bg-background/50 border-border/50 focus:border-primary rounded-xl text-left"
                   placeholder="رمز عبور"
                   disabled={isPending}
                   required
